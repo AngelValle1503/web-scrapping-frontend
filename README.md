@@ -1,3 +1,16 @@
+# Web Scrapping frontend
+
+## Android APK
+
+The Android package is generated automatically by the **Build Android APK** GitHub
+Actions workflow whenever changes are pushed to the `production` branch. Open the
+workflow run in GitHub Actions and download the `web-scrapping-android-apk`
+artifact. It is an installable debug APK intended for testing.
+
+The app uses the production API configured through `VITE_API_URL`. Android WebView
+requests come from `https://localhost`, which must be included in the backend's
+`CORS_ALLOWED_ORIGINS` variable on Render.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.

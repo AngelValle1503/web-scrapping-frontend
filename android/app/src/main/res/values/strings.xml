@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Web Scrapping</string>
+    <string name="title_activity_main">Web Scrapping</string>
+    <string name="package_name">com.angelvalle1503.webscrapping</string>
+    <string name="custom_url_scheme">com.angelvalle1503.webscrapping</string>
+</resources>
