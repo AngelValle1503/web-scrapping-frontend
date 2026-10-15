@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Crosshair,
   TrendingUp,
+  LogOut,
 } from 'lucide-react'
 import './App.css'
 import type { Product, ScrapePayload, TrackedElement, HtmlPreviewData } from './types'
@@ -22,9 +23,12 @@ import { ProductImageCarousel } from './components/ProductImageCarousel'
 import { HtmlVisualInspector } from './components/HtmlVisualInspector'
 import { TrackedElementsTable } from './components/TrackedElementsTable'
 import { ChangeHistoryModal } from './components/ChangeHistoryModal'
-import { apiUrl } from './api'
+import { AuthPage, type AuthenticatedUser } from './components/AuthPage'
+import { apiFetch, clearAuthToken, getAuthToken } from './api'
 
 export default function App() {
+  const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<'tracked_elements' | 'products'>('tracked_elements')
 
@@ -68,11 +72,39 @@ export default function App() {
     image_url: '',
   })
 
-  // Load products & tracked elements on mount
   useEffect(() => {
+    const restoreSession = async () => {
+      if (!getAuthToken()) {
+        setAuthLoading(false)
+        return
+      }
+
+      try {
+        const response = await apiFetch('/api/auth/user')
+        const data = (await response.json()) as { user?: AuthenticatedUser }
+
+        if (response.ok && data.user) {
+          setAuthenticatedUser(data.user)
+        } else {
+          clearAuthToken()
+        }
+      } catch {
+        clearAuthToken()
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    void restoreSession()
+  }, [])
+
+  // Load products & tracked elements after authenticating
+  useEffect(() => {
+    if (!authenticatedUser) return
+
     fetchProducts()
     fetchTrackedElements()
-  }, [])
+  }, [authenticatedUser])
 
   // 5-minute auto check interval countdown
   useEffect(() => {
@@ -101,7 +133,7 @@ export default function App() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const res = await fetch(apiUrl('/api/products'))
+      const res = await apiFetch('/api/products')
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
         setProducts(json.data)
@@ -115,7 +147,7 @@ export default function App() {
 
   const fetchTrackedElements = async () => {
     try {
-      const res = await fetch(apiUrl('/api/tracked-elements'))
+      const res = await apiFetch('/api/tracked-elements')
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
         setTrackedElements(json.data)
@@ -161,7 +193,7 @@ export default function App() {
 
     try {
       setPreviewLoading(true)
-      const res = await fetch(apiUrl('/api/inspector/preview'), {
+      const res = await apiFetch('/api/inspector/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ url: targetUrl }),
@@ -189,7 +221,7 @@ export default function App() {
     initial_value: string
     check_interval_minutes: number
   }) => {
-    const res = await fetch(apiUrl('/api/tracked-elements'), {
+    const res = await apiFetch('/api/tracked-elements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(payload),
@@ -209,7 +241,7 @@ export default function App() {
   const handleCheckSingleTracked = async (id: number) => {
     try {
       setCheckingElementId(id)
-      const res = await fetch(apiUrl(`/api/tracked-elements/${id}/check`), {
+      const res = await apiFetch(`/api/tracked-elements/${id}/check`, {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -231,7 +263,7 @@ export default function App() {
   const handleCheckAllTracked = async (silent = false) => {
     try {
       setIsCheckingAll(true)
-      const res = await fetch(apiUrl('/api/tracked-elements/check-all'), {
+      const res = await apiFetch('/api/tracked-elements/check-all', {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -254,7 +286,7 @@ export default function App() {
   // Pausar / Reactivar elemento
   const handleToggleStatusTracked = async (id: number) => {
     try {
-      const res = await fetch(apiUrl(`/api/tracked-elements/${id}/toggle-status`), {
+      const res = await apiFetch(`/api/tracked-elements/${id}/toggle-status`, {
         method: 'PATCH',
         headers: { Accept: 'application/json' },
       })
@@ -272,7 +304,7 @@ export default function App() {
   const handleDeleteTracked = async (id: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este elemento del monitoreo?')) return
     try {
-      const res = await fetch(apiUrl(`/api/tracked-elements/${id}`), {
+      const res = await apiFetch(`/api/tracked-elements/${id}`, {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
       })
@@ -295,7 +327,7 @@ export default function App() {
 
     try {
       setScraping(true)
-      const res = await fetch(apiUrl('/api/products/extract'), {
+      const res = await apiFetch('/api/products/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ url: rawUrl }),
@@ -334,7 +366,7 @@ export default function App() {
     try {
       setScraping(true)
       const parsed = JSON.parse(jsonPayload)
-      const res = await fetch(apiUrl('/api/scraper/products'), {
+      const res = await apiFetch('/api/scraper/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(parsed),
@@ -360,7 +392,7 @@ export default function App() {
     e.preventDefault()
     try {
       setScraping(true)
-      const res = await fetch(apiUrl('/api/scraper/products'), {
+      const res = await apiFetch('/api/scraper/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(manualForm),
@@ -386,7 +418,7 @@ export default function App() {
   const handleRefreshPrice = async (offerId: number) => {
     try {
       setRefreshingOfferId(offerId)
-      const res = await fetch(apiUrl(`/api/offers/${offerId}/refresh`), {
+      const res = await apiFetch(`/api/offers/${offerId}/refresh`, {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -408,7 +440,7 @@ export default function App() {
   const handleDeleteProduct = async (id: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este producto monitoreado?')) return
     try {
-      const res = await fetch(apiUrl(`/api/products/${id}`), {
+      const res = await apiFetch(`/api/products/${id}`, {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
       })
@@ -456,6 +488,25 @@ export default function App() {
     0
   )
 
+  const handleLogout = async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      clearAuthToken()
+      setAuthenticatedUser(null)
+      setProducts([])
+      setTrackedElements([])
+    }
+  }
+
+  if (authLoading) {
+    return <main className="auth-page"><p className="auth-loading">Comprobando sesión...</p></main>
+  }
+
+  if (!authenticatedUser) {
+    return <AuthPage onAuthenticated={setAuthenticatedUser} />
+  }
+
   return (
     <div className="app-container">
       {/* Toast Alert */}
@@ -483,6 +534,12 @@ export default function App() {
         <div className="header-status">
           <div className="status-dot"></div>
           <span>API Laravel & MySQL 8.4 En Línea</span>
+        </div>
+        <div className="header-user">
+          <span>{authenticatedUser.name}</span>
+          <button type="button" onClick={handleLogout} title="Cerrar sesión">
+            <LogOut size={16} /> Salir
+          </button>
         </div>
       </header>
 

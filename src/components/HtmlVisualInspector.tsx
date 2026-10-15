@@ -13,7 +13,7 @@ import {
   Info,
 } from 'lucide-react'
 import type { HtmlPreviewData, SelectedElementData } from '../types'
-import { apiUrl } from '../api'
+import { apiFetch } from '../api'
 
 interface HtmlVisualInspectorProps {
   previewData: HtmlPreviewData
@@ -95,7 +95,7 @@ export const HtmlVisualInspector: React.FC<HtmlVisualInspectorProps> = ({
     setFeedbackMsg(null)
 
     try {
-      const response = await fetch(apiUrl('/api/inspector/test-selector'), {
+      const response = await apiFetch('/api/inspector/test-selector', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
