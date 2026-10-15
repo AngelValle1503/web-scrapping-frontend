@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import type { TrackedElement, TrackedElementLog } from '../types'
+import { apiUrl } from '../api'
 
 interface ChangeHistoryModalProps {
   element: TrackedElement
@@ -31,7 +32,7 @@ export const ChangeHistoryModal: React.FC<ChangeHistoryModalProps> = ({
   const fetchLogs = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/tracked-elements/${element.id}/logs`)
+      const res = await fetch(apiUrl(`/api/tracked-elements/${element.id}/logs`))
       const data = await res.json()
       if (data.success && data.data) {
         setLogs(data.data.data || data.data)

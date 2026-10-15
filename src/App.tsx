@@ -22,6 +22,7 @@ import { ProductImageCarousel } from './components/ProductImageCarousel'
 import { HtmlVisualInspector } from './components/HtmlVisualInspector'
 import { TrackedElementsTable } from './components/TrackedElementsTable'
 import { ChangeHistoryModal } from './components/ChangeHistoryModal'
+import { apiUrl } from './api'
 
 export default function App() {
   // Navigation Tabs
@@ -39,7 +40,7 @@ export default function App() {
   const [previewLoading, setPreviewLoading] = useState<boolean>(false)
   const [historyModalElement, setHistoryModalElement] = useState<TrackedElement | null>(null)
   const [countdownSeconds, setCountdownSeconds] = useState<number>(300)
-  const [isAutoChecking, setIsAutoChecking] = useState<boolean>(true)
+  const [isAutoChecking, setIsAutoChecking] = useState<boolean>(import.meta.env.DEV)
   const [isCheckingAll, setIsCheckingAll] = useState<boolean>(false)
   const [checkingElementId, setCheckingElementId] = useState<number | null>(null)
 
@@ -100,7 +101,7 @@ export default function App() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/products')
+      const res = await fetch(apiUrl('/api/products'))
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
         setProducts(json.data)
@@ -114,7 +115,7 @@ export default function App() {
 
   const fetchTrackedElements = async () => {
     try {
-      const res = await fetch('/api/tracked-elements')
+      const res = await fetch(apiUrl('/api/tracked-elements'))
       const json = await res.json()
       if (json.success && Array.isArray(json.data)) {
         setTrackedElements(json.data)
@@ -160,7 +161,7 @@ export default function App() {
 
     try {
       setPreviewLoading(true)
-      const res = await fetch('/api/inspector/preview', {
+      const res = await fetch(apiUrl('/api/inspector/preview'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ url: targetUrl }),
@@ -188,7 +189,7 @@ export default function App() {
     initial_value: string
     check_interval_minutes: number
   }) => {
-    const res = await fetch('/api/tracked-elements', {
+    const res = await fetch(apiUrl('/api/tracked-elements'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(payload),
@@ -208,7 +209,7 @@ export default function App() {
   const handleCheckSingleTracked = async (id: number) => {
     try {
       setCheckingElementId(id)
-      const res = await fetch(`/api/tracked-elements/${id}/check`, {
+      const res = await fetch(apiUrl(`/api/tracked-elements/${id}/check`), {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -230,7 +231,7 @@ export default function App() {
   const handleCheckAllTracked = async (silent = false) => {
     try {
       setIsCheckingAll(true)
-      const res = await fetch('/api/tracked-elements/check-all', {
+      const res = await fetch(apiUrl('/api/tracked-elements/check-all'), {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -253,7 +254,7 @@ export default function App() {
   // Pausar / Reactivar elemento
   const handleToggleStatusTracked = async (id: number) => {
     try {
-      const res = await fetch(`/api/tracked-elements/${id}/toggle-status`, {
+      const res = await fetch(apiUrl(`/api/tracked-elements/${id}/toggle-status`), {
         method: 'PATCH',
         headers: { Accept: 'application/json' },
       })
@@ -271,7 +272,7 @@ export default function App() {
   const handleDeleteTracked = async (id: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este elemento del monitoreo?')) return
     try {
-      const res = await fetch(`/api/tracked-elements/${id}`, {
+      const res = await fetch(apiUrl(`/api/tracked-elements/${id}`), {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
       })
@@ -294,7 +295,7 @@ export default function App() {
 
     try {
       setScraping(true)
-      const res = await fetch('/api/products/extract', {
+      const res = await fetch(apiUrl('/api/products/extract'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ url: rawUrl }),
@@ -333,7 +334,7 @@ export default function App() {
     try {
       setScraping(true)
       const parsed = JSON.parse(jsonPayload)
-      const res = await fetch('/api/scraper/products', {
+      const res = await fetch(apiUrl('/api/scraper/products'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(parsed),
@@ -359,7 +360,7 @@ export default function App() {
     e.preventDefault()
     try {
       setScraping(true)
-      const res = await fetch('/api/scraper/products', {
+      const res = await fetch(apiUrl('/api/scraper/products'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(manualForm),
@@ -385,7 +386,7 @@ export default function App() {
   const handleRefreshPrice = async (offerId: number) => {
     try {
       setRefreshingOfferId(offerId)
-      const res = await fetch(`/api/offers/${offerId}/refresh`, {
+      const res = await fetch(apiUrl(`/api/offers/${offerId}/refresh`), {
         method: 'POST',
         headers: { Accept: 'application/json' },
       })
@@ -407,7 +408,7 @@ export default function App() {
   const handleDeleteProduct = async (id: number) => {
     if (!window.confirm('¿Seguro que deseas eliminar este producto monitoreado?')) return
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(apiUrl(`/api/products/${id}`), {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
       })
