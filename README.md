@@ -7,7 +7,8 @@ Actions workflow whenever changes are pushed to the `production` branch. Open th
 workflow run in GitHub Actions and download the `web-scrapping-android-apk`
 artifact. It is an installable debug APK intended for testing.
 
-The app uses the production API configured through `VITE_API_URL`. Android WebView
+The app uses the production API configured through `VITE_API_URL`. The GitHub
+Actions workflow includes the public Render API URL when building the APK. Android WebView
 requests come from `https://localhost`, which must be included in the backend's
 `CORS_ALLOWED_ORIGINS` variable on Render.
 

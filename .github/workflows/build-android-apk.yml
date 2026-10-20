@@ -35,6 +35,10 @@ jobs:
 
       - name: Build the web application
         run: npm run build
+        env:
+          # Vite replaces this value at build time. Unlike Vercel, GitHub Actions
+          # does not automatically receive the project's VITE_API_URL setting.
+          VITE_API_URL: https://web-scrapping-api-9w6t.onrender.com
 
       - name: Sync Android project
         run: npx cap sync android
